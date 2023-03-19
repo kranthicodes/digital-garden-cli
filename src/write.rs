@@ -1,6 +1,6 @@
 use color_eyre::eyre::{Result, WrapErr};
 use edit::{edit_file, Builder};
-use std::io::{Read, Write};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 
 const TEMPLATE: &[u8; 2] = b"# ";
@@ -19,7 +19,59 @@ pub fn write(garden_path: PathBuf, title: Option<String>) -> Result<()> {
     edit_file(filepath)?;
     // Read the user's changes back from the file into a string
     let mut contents = String::new();
+    file.seek(SeekFrom::Start(0))?;
     file.read_to_string(&mut contents)?;
 
+    // use `title` if the user passed it in,
+    // otherwise try to find a heading in the markdown
+    let document_title = title.or_else(|| {
+        contents
+            .lines()
+            .find(|line| line.starts_with("# "))
+            .map(|maybe_line| maybe_line.trim_start_matches("# ").to_string())
+    });
+
+    let filename = match document_title {
+        Some(raw_title) => confirm_filename(&raw_title),
+        None => ask_for_filename(),
+    };
+
     todo!()
+}
+
+fn ask_for_filename() -> Result<String> {
+    rprompt::prompt_reply(
+        "\
+    Enter filename
+    >",
+    )
+    .wrap_err("Failed to get filename")
+    .map(|title| slug::slugify(title))
+}
+
+fn confirm_filename(raw_title: &str) -> Result<String> {
+    loop {
+        // prompt defaults to uppercase character in question
+        // this is a convention, not a requirement enforced by
+        // the code
+        let result = rprompt::prompt_reply(&format!(
+            "\
+            current title: `{}`
+            Do you want a different title? (y/N): ",
+            raw_title
+        ))
+        .wrap_err("Failed to get input for y/n question")?;
+
+        match result.as_str() {
+            "y" | "Y" => break ask_for_filename(),
+            "n" | "N" | "" => {
+                // the capital N in the prompt means "default",
+                // so we handle "" as input here
+                break Ok(slug::slugify(raw_title));
+            }
+            _ => {
+                //ask again because something went wrong
+            }
+        };
+    }
 }
