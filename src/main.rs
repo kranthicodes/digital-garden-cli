@@ -48,6 +48,6 @@ fn main() -> Result<()> {
         None => get_default_garden_dir().wrap_err("garden_path was not supplied"),
     }?;
     match opt.cmd {
-        Command::Write { title } => write(title),
+        Command::Write { title } => write(garden_path, title),
     }
 }
