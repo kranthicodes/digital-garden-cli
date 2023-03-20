@@ -35,7 +35,7 @@ enum Command {
 fn get_default_garden_dir() -> Result<PathBuf> {
     let user_dir = UserDirs::new().ok_or_else(|| eyre!("Could not find home directory"))?;
 
-    Ok(user_dir.home_dir().join(".garden"))
+    Ok(user_dir.home_dir().join("personal/garden"))
 }
 
 fn main() -> Result<()> {

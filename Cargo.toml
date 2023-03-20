@@ -14,6 +14,7 @@ name = "digital_garden"
 path = "src/lib.rs"
 
 [dependencies]
+assert_fs = "1.0.12"
 color-eyre = "0.6.2"
 directories = "5.0.0"
 edit = "0.1.4"
